@@ -30,7 +30,7 @@ class RealtimeTradeMod(AbstractMod):
     def start_up(self, env, mod_config):
 
         if env.config.base.run_type in (RUN_TYPE.PAPER_TRADING, RUN_TYPE.LIVE_TRADING):
-            user_system_log.warn(_("[Warning] When you use this version of RealtimeTradeMod, history_bars can only get data from yesterday."))
+            #user_system_log.warn(_("[Warning] When you use this version of RealtimeTradeMod, history_bars can only get data from yesterday."))
 
             if mod_config.redis_uri:
                 env.set_data_source(RedisDataSource(env.config.base.data_bundle_path, mod_config.redis_uri))

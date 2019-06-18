@@ -65,19 +65,41 @@ def order_book_id_2_tushare_code(order_book_id):
 
 def get_realtime_quotes(order_book_id_list, open_only=False, include_limit=False):
     import tushare as ts
+    import easyquotation as eq
+    import pandas as pd
+    
+    quotation = eq.use('sina')
 
-    code_list = [order_book_id_2_tushare_code(code) for code in order_book_id_list]
+    index_list=['sh000001','sz399001','sh000016','sh000300','sh000905','sz399005','sz399006.XSHE']
+    index_data=quotation.stocks(index_list, prefix=False) 
+    index_df=pd.DataFrame(index_data).T
+    index_df=index_df.reset_index()
+    index_df=index_df.rename(columns={"index": "code"})
+    index_df[]
+    #index_df
+    data=quotation.market_snapshot(prefix=False)
+    total_df=pd.DataFrame(data).T
+    total_df=total_df.reset_index()
+    total_df=total_df.rename(columns={"index": "code"})
+    
+    #code_list = [order_book_id_2_tushare_code(code) for code in order_book_id_list]
 
-    max_len = 800
-    loop_cnt = int(math.ceil(float(len(code_list)) / max_len))
+    #max_len = 800
+    #loop_cnt = int(math.ceil(float(len(code_list)) / max_len))
 
-    total_df = reduce(lambda df1, df2: df1.append(df2),
-                      [ts.get_realtime_quotes([code for code in code_list[i::loop_cnt]])
-                       for i in range(loop_cnt)])
+    #total_df = reduce(lambda df1, df2: df1.append(df2),
+    #                  [ts.get_realtime_quotes([code for code in code_list[i::loop_cnt]])
+    #                   for i in range(loop_cnt)])
     total_df["is_index"] = False
-
+    
+    index_list=['sh000001','sz399001','sh000016','sh000300','sh000905','sz399005','sz399006.XSHE']
+    index_data=quotation.stocks(index_list, prefix=False)
+    index_df=pd.DataFrame(index_data).T
+    index_df=index_df.reset_index()
+    index_df=index_df.rename(columns={"index": "code"})
+    
     index_symbol = ["sh", "sz", "hs300", "sz50", "zxb", "cyb"]
-    index_df = ts.get_realtime_quotes(index_symbol)
+    #index_df = ts.get_realtime_quotes(index_symbol)
     index_df["code"] = index_symbol
     index_df["is_index"] = True
     total_df = total_df.append(index_df)
