@@ -80,6 +80,7 @@ class RealtimeEventSource(AbstractEventSource):
 
         while True:
             # wait for the first data ready
+            #To do Error msg
             if data_proxy.current_snapshot("000001.XSHG", None, None).datetime.date() == datetime.date.today():
                 system_log.info(_("Market data is ready, start to work now!"))
                 break
