@@ -75,7 +75,6 @@ def get_realtime_quotes(order_book_id_list, open_only=False, include_limit=False
     index_df=pd.DataFrame(index_data).T
     index_df=index_df.reset_index()
     index_df=index_df.rename(columns={"index": "code"})
-    index_df[]
     #index_df
     data=quotation.market_snapshot(prefix=False)
     total_df=pd.DataFrame(data).T
