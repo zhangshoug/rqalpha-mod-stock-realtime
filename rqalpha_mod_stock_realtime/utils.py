@@ -74,22 +74,28 @@ def get_realtime_quotes(order_book_id_list, open_only=False, include_limit=False
     import QUANTAXIS as QA
     import easyquotation as eq
     import pandas as pd
-
-    stock_list = QA.QA_fetch_stock_list_adv()
-    total_stock_list=[]
+    
+    stock_list = QA.QAFetch.QATdx.QA_fetch_get_stock_list('stock')
+    code_stock_list=[]
     i=0
     for code in stock_list['code'] :
-        total_stock_list.append(stock_list['sse'][i]+stock_list['code'][i])
+        code_stock_list.append(stock_list['sse'][i]+stock_list['code'][i])
         i +=1
-    index_list=['sh000001','sz399001','sh000016','sh000300','sh000905','sz399005','sz399006']
-    
-    code_list = index_list+total_stock_list
-    
+
+    index_list = QA.QAFetch.QATdx.QA_fetch_get_stock_list('index')
+    code_index_list=[]
+    i=0
+    for code in index_list['code'] :
+        code_index_list.append(index_list['sse'][i]+index_list['code'][i])
+        i +=1
+
+    code_list=code_index_list+code_stock_list
+
     quotation = eq.use('sina')
     data=quotation.stocks(code_list, prefix=True) 
     total_df=pd.DataFrame(data).T
     total_df=total_df.reset_index()
-    total_df=total_df.rename(columns={"index": "code",'close':"prev_close",'now':'price','turnover':'amount'})
+    total_df=total_df.rename(columns={"index": "code",'close':"pre_close",'now':'price','turnover':'amount'})
 
     columns = set(total_df.columns) - set(["name", "time", "date", "code"])
     # columns = filter(lambda x: "_v" not in x, columns)
@@ -97,7 +103,7 @@ def get_realtime_quotes(order_book_id_list, open_only=False, include_limit=False
         total_df[label] = total_df[label].map(lambda x: 0 if str(x).strip() == "" else x)
         total_df[label] = total_df[label].astype(float)
 
-    total_df["chg"] = total_df["price"] / total_df["prev_close"] - 1
+    total_df["chg"] = total_df["price"] / total_df["pre_close"] - 1
 
     total_df["order_book_id"] = total_df["code"]
     total_df["order_book_id"] = total_df["order_book_id"].apply(easyquotation_code_2_order_book_id)
@@ -107,10 +113,29 @@ def get_realtime_quotes(order_book_id_list, open_only=False, include_limit=False
 
     total_df["datetime"] = total_df["date"] + " " + total_df["time"]
 
+    # total_df["datetime"] = total_df["datetime"].apply(
+    #     lambda x: convert_dt_to_int(datetime.datetime.strptime(x, "%Y-%m-%d %H:%M:%S")))
+
+    total_df["close"] = total_df["price"]
+    total_df["last"] = total_df["price"]
+
+    total_df = total_df.rename(columns={
+        "{}{}_p".format(base_name, i): "{}{}".format(base_name, i)
+        for i in range(1, 6) for base_name in ["a", "b"]
+    })
+    total_df = total_df.rename(columns={"pre_close": "prev_close"})
+
     del total_df["code"]
     del total_df["date"]
     del total_df["time"]
-
-    total_df = total_df[total_df.open > 0]
     
+    if include_limit:
+        total_df["limit_up"] = total_df.apply(
+            lambda row: row.prev_close * (1.1 if "ST" not in row["name"] else 1.05), axis=1).round(2)
+        total_df["limit_down"] = total_df.apply(
+            lambda row: row.prev_close * (0.9 if "ST" not in row["name"] else 0.95), axis=1).round(2)
+
+    if open_only:
+        total_df = total_df[total_df.open > 0]
+
     return total_df
