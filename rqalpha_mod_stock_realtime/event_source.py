@@ -29,6 +29,9 @@ from rqalpha.utils.i18n import gettext as _
 from .utils import get_realtime_quotes, is_holiday_today, is_tradetime_now
 from . import data_board
 
+import easyquotation as eq
+import pandas as pd
+
 
 class RealtimeEventSource(AbstractEventSource):
     MARKET_DATA_EVENT = "RealtimeEventSource.MARKET_DATA_EVENT"
@@ -77,15 +80,20 @@ class RealtimeEventSource(AbstractEventSource):
 
     def clock_worker(self):
         data_proxy = self._env.data_proxy
+        
+        quotation = eq.use('sina')
+        data=quotation.stocks('sh000001', prefix=True)
+        df=pd.DataFrame(data).T
+        #df.date[0]==str(datetime.date.today())
 
         while True:
             # wait for the first data ready
             #To do Error msg
-            #print("000001.XSHG数据:",data_proxy.current_snapshot("000001.XSHG", '1d', datetime.date.today())
-            if data_proxy.current_snapshot("000001.XSHG", None, None).datetime.date() == datetime.date.today():
+            #if data_proxy.current_snapshot("000001.XSHG", None, None).datetime.date() == datetime.date.today():
+            if df.date[0]==str(datetime.date.today()) :
                 system_log.info(_("Market data is ready, start to work now!"))
                 break
-            time.sleep(0.1)
+            time.sleep(1)
 
         while True:
             time.sleep(self.fps)
